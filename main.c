@@ -1,6 +1,7 @@
 # include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <assert.h>
 
 
 struct MemoryBlock {
@@ -104,6 +105,48 @@ void* custom_malloc(size_t size) {
 }
 
 
+// Ооочень упрощенная версия функции free, чтобы реализовать оригинальный автор должен родиться заново и очень умным :(
+// P.S возможно поумнеет и попробует ещё раз
+void custom_free(void* ptr) {
+    if (ptr == NULL) return;
+    
+    // Получаем указатель на структуру MemoryBlock, которая находится
+    // прямо перед областью данных, на которую указывает ptr
+    struct MemoryBlock* current = ((struct MemoryBlock*)ptr) - 1;
+    
+    // Проверяем, что блок еще не свободный
+    assert(current->is_free != true);
+
+    // Сначала проверяем и объединяем с предыдущим блоком, если он существует и свободен
+    if (current->bk != NULL && current->bk->is_free) {
+        current->bk->size += sizeof(struct MemoryBlock) + current->size;
+        
+        if (current->fd != NULL) {
+            current->bk->fd = current->fd;
+        }
+        
+        current = current->bk;
+        
+        if (current->fd != NULL) {
+            current->fd->bk = current;
+        }
+    }
+
+    // Теперь проверяем и объединяем со следующим блоком, если он существует и свободен
+    if (current->fd != NULL && current->fd->is_free) {
+        current->size += sizeof(struct MemoryBlock) + current->fd->size;
+        current->fd = current->fd->fd;
+        
+        if (current->fd != NULL) {
+            current->fd->bk = current;
+        }
+    }
+
+    // Помечаем окончательный блок как свободный
+    current->is_free = true;
+}
+
+
 int main()
 {
     initialize_heap(1000);
@@ -112,8 +155,12 @@ int main()
     printf("Located: %p\n\n", heap_start);
 
     void* ptr1 = custom_malloc(100);
-    void* ptr2 = custom_malloc(200);
-    void* ptr3 = custom_malloc(1001);
+    void* ptr2 = custom_malloc(100);
+    void* ptr3 = custom_malloc(100);
+    void* ptr4 = custom_malloc(100);
+    void* ptr5 = custom_malloc(100);
+
+    custom_free(ptr3);
 
     struct MemoryBlock* current = heap_start;
     printf("\nMemory blocks state:\n");
