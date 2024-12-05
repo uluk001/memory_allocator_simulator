@@ -53,6 +53,5 @@ Feel free to fork the repository and submit pull requests. Areas for improvement
 
 ## Author
 
-Uluk
 [GitHub](https://github.com/uluk001)  
 [LinkedIn](https://www.linkedin.com/in/ismailov-uluk-92784a233/)
